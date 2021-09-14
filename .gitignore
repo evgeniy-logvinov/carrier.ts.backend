@@ -71,6 +71,8 @@ typings/
 # dotenv environment variables file
 .env
 .env.test
+.env.development
+.env.production
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -102,3 +104,18 @@ dist
 
 # TernJS port file
 .tern-port
+
+/node_modules/
+.DS_Store
+*.swp
+*.pyc
+.vscode
+.idea
+yarn.lock
+/types/*
+jest-report.json
+drivers/
+tsconfig.tsbuildinfo
+app/
+jest.env.dev.js
+pgadmin
