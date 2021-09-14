@@ -54,7 +54,7 @@
     "tsc": "tsc -p .",
     "test": "npm run lint && npm run test:api",
     "test:api": "jest --testPathPattern=test/",
-    "build": "npm run build",
+    "build": "node .",
     "prestart": "npm run build",
     "start": "node .",
     "start:dev": "nodemon -L",
