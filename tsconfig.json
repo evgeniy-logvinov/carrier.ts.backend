@@ -8,7 +8,7 @@
     "sourceMap": true,
     "incremental": true,
     "rootDir": "./src",
-    "outDir": "./app",
+    "outDir": "./",
     "strict": true,
     "declaration": false,
     "esModuleInterop": true,
