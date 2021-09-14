@@ -48,6 +48,12 @@
     "ws": "^7.3.1"
   },
   "scripts": {
+    "start": "node .",
+    "postinstall": "tsc",
+    "watch-node": "nodemon dist/index.js",
+    "watch-ts": "tsc -w",
+    "deploy": "git add . && git commit -m Heroku && git push heroku master",
+
     "eslint": "[ \"$CI\" = true ] && eslint --quiet -f codeframe --ext js,ts . || eslint --ext js,ts .",
     "eslint:fix": "[ \"$CI\" = true ] && eslint --quiet -f codeframe --ext js,ts . --fix || eslint --ext js,ts . --fix",
     "lint": "npm run eslint && npm run tsc",
@@ -56,8 +62,8 @@
     "test": "npm run lint && npm run test:api",
     "test:api": "jest --testPathPattern=test/",
     "build": "tsc -p ./",
-    "postinstall": "npm run tsc",
-    "start": "node .",
+    "postinstall1": "npm run tsc",
+    "start2": "node .",
     "start:inspect": "npm run build && node --inspect=0.0.0.0:9229 .",
     "start:dev": "npm run build && docker-compose -f docker-compose-dev.yml up --force-recreate --build --exit-code-from carrier",
     "start:in-docker:dev": "node utils/wait-for.js postgres 5432 50000 && knex migrate:latest && nodemon -L",
