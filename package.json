@@ -44,7 +44,7 @@
     "pg": "^8.3.3",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.3.0",
-    "typescript": "^4.0.2",
+    "typescript": "^4.4.3",
     "ws": "^7.3.1"
   },
   "scripts": {
@@ -52,12 +52,15 @@
     "eslint:fix": "[ \"$CI\" = true ] && eslint --quiet -f codeframe --ext js,ts . --fix || eslint --ext js,ts . --fix",
     "lint": "npm run eslint && npm run tsc",
     "tsc": "tsc -p .",
+    "clean": "rm -f tsconfig.tsbuildinfo && docker-compose -f ./docker-compose-dev.yml rm --force && rimraf app",
     "test": "npm run lint && npm run test:api",
     "test:api": "jest --testPathPattern=test/",
-    "build": "node .",
+    "build": "tsc -p ./",
     "prestart": "npm run build",
     "start": "node .",
-    "start:dev": "nodemon -L",
+    "start:inspect": "npm run build && node --inspect=0.0.0.0:9229 .",
+    "start:dev": "npm run build && docker-compose -f docker-compose-dev.yml up --force-recreate --build --exit-code-from carrier",
+    "start:in-docker:dev": "node utils/wait-for.js postgres 5432 50000 && knex migrate:latest && nodemon -L",
     "start:prod": "NODE_ENV=production nodemon index.ts"
   },
   "repository": {
