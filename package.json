@@ -56,9 +56,14 @@
     "test:api": "jest --testPathPattern=test/",
     "build": "tsc -p .",
     "prestart": "npm run build",
-    "start": "node .",
     "start:dev": "nodemon -L",
-    "start:prod": "NODE_ENV=production nodemon index.ts"
+    "start:prod": "NODE_ENV=production nodemon index.ts",
+    "postinstall": "npm run build-ts",
+    "build-ts": "tsc",
+    "start": "npm run serve",
+    "serve": "node dist/server.js",
+    "watch-node": "nodemon dist/server.js",
+    "watch-ts": "tsc -w"
   },
   "repository": {
     "type": "git",
