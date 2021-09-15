@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-require('dotenv').config();
-const { default: app } = require('./app/app.js');
+import app from './app';
 
-const port = 8099;
-
-app.listen(port, () => {
-  console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
-});
+const PORT = process.env.PORT || '3000';
+app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`));

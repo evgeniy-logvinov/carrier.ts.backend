@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=12.18.3"
   },
-  "main": "index.js",
+  "main": "dist/server.js",
   "dependencies": {
     "@tinkoff/invest-openapi-js-sdk": "^1.2.16",
     "dotenv": "^8.2.0",
