@@ -44,5 +44,5 @@ const app = express();
 // }
 
 app.get('/', (_, res) => res.send('Hello World!'));
-
+console.log('Done');
 export default app;

@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=12.18.3"
   },
-  "main": "dist/server.js",
+  "main": "dist/index.js",
   "dependencies": {
     "@tinkoff/invest-openapi-js-sdk": "^1.2.16",
     "dotenv": "^8.2.0",
@@ -60,8 +60,8 @@
     "postinstall": "npm run build-ts",
     "build-ts": "tsc",
     "start": "npm run serve",
-    "serve": "node dist/server.js",
-    "watch-node": "nodemon dist/server.js",
+    "serve": "node dist/index.js",
+    "watch-node": "nodemon dist/index.js",
     "watch-ts": "tsc -w"
   },
   "repository": {
