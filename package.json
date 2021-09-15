@@ -51,18 +51,18 @@
     "eslint": "[ \"$CI\" = true ] && eslint --quiet -f codeframe --ext js,ts . || eslint --ext js,ts .",
     "eslint:fix": "[ \"$CI\" = true ] && eslint --quiet -f codeframe --ext js,ts . --fix || eslint --ext js,ts . --fix",
     "lint": "npm run eslint && npm run tsc",
-    "tsc": "tsc -p .",
     "test": "npm run lint && npm run test:api",
     "test:api": "jest --testPathPattern=test/",
     "prestart": "npm run build",
     "start:dev": "nodemon -L",
     "start:prod": "NODE_ENV=production nodemon index.ts",
     "postinstall": "npm run build-ts",
-    "build-ts": "tsc",
-    "start": "npm run serve",
-    "serve": "node dist/index.js",
     "watch-node": "nodemon dist/index.js",
-    "watch-ts": "tsc -w"
+    "watch-ts": "tsc -w",
+    "build-ts": "tsc",
+    "tsc": "tsc -p .",
+    "start": "npm run serve",
+    "serve": "node dist/index.js"
   },
   "repository": {
     "type": "git",
