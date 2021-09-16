@@ -27,7 +27,7 @@ if (process.env.SANDBOX_TOKEN || process.env.TOKEN) {
     carrier.fillPortfolio();
     carrier.getPortfolio();
     // carrier.Apple();
-    // carrier.Baidu();
+    carrier.Baidu();
     // carrier.EnergyTransfer();
     // carrier.AmericanAirlines();
     // carrier.BakerHughes();
