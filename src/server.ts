@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// import app from './app';
-import express from 'express';
+import app from './app';
 
-const app = express();
-
-const PORT = process.env.PORT || '3000';
+const PORT = process.env.PORT || 3000;
+console.log('Test console. log string');
 app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`));
