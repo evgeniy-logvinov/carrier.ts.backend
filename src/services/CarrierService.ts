@@ -19,11 +19,14 @@ import TinkoffService from './TinkoffService';
 
 class CarrierService {
 
-  private testEnv = false;
+  private testEnv = !process.env.TOKEN;
 
   public fillPortfolio = async () => {
     const portfolioService = new PortfolioService();
     await portfolioService.sandboxClear();
+
+    console.log('testEnv', this.testEnv);
+
     if (this.testEnv)
       portfolioService.setCurrenciesBalance('USD', 4000);
   }

@@ -7,3 +7,5 @@ Node js tinkoff bot
 - Carrier
   SANDBOX_TOKEN=""
   TOKEN=""
+  BOT_TOKEN=""
+  CHANNEL_NAME="@channel_name"

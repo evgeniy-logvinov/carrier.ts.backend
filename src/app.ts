@@ -16,6 +16,7 @@
 import express from 'express';
 import CarrierService from './services/CarrierService';
 import HelperService from './services/HelperService';
+import TelegramBotService from './services/TelegramBotService';
 
 const app = express();
 
@@ -36,6 +37,7 @@ if (process.env.SANDBOX_TOKEN || process.env.TOKEN) {
     // carrier.CorEnergyInfrastructureTrust();
     // carrier.Fxim();
     // carrier.Hess();
+    TelegramBotService.sendMessage('Application is start');
   } catch (err) {
     HelperService.errorHandler(err);
   }
