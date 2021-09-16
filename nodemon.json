@@ -1,5 +1,5 @@
 {
-  "watch": ["src","index.js"],
-  "ext": "ts,json,js",
-  "exec": "npm run start:inspect"
+  "ignore": [".git", "node_modules", "dist"],
+  "watch": ["./src"],
+  "ext": "ts"
 }

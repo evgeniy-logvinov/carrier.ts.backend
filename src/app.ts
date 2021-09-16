@@ -14,34 +14,34 @@
  * limitations under the License.
  */
 import express from 'express';
-// import CarrierService from './services/CarrierService';
-// import HelperService from './services/HelperService';
+import CarrierService from './services/CarrierService';
+import HelperService from './services/HelperService';
 
 const app = express();
 
-// console.log('sandboxToken', process.env.SANDBOX_TOKEN);
-// console.log('token', process.env.TOKEN);
-// if (process.env.SANDBOX_TOKEN || process.env.TOKEN) {
-//   try {
-//     const carrier = new CarrierService();
-//     carrier.fillPortfolio();
-//     carrier.getPortfolio();
-//     // carrier.Apple();
-//     // carrier.Baidu();
-//     // carrier.EnergyTransfer();
-//     // carrier.AmericanAirlines();
-//     // carrier.BakerHughes();
-//     // carrier.RoyalDutchShell();
-//     // carrier.Nike();
-//     // carrier.CorEnergyInfrastructureTrust();
-//     // carrier.Fxim();
-//     // carrier.Hess();
-//   } catch (err) {
-//     HelperService.errorHandler(err);
-//   }
-// } else {
-//   throw Error('Please fill sandbox token');
-// }
+console.log('sandboxToken', process.env.SANDBOX_TOKEN);
+console.log('token', process.env.TOKEN);
+if (process.env.SANDBOX_TOKEN || process.env.TOKEN) {
+  try {
+    const carrier = new CarrierService();
+    carrier.fillPortfolio();
+    carrier.getPortfolio();
+    // carrier.Apple();
+    // carrier.Baidu();
+    // carrier.EnergyTransfer();
+    // carrier.AmericanAirlines();
+    // carrier.BakerHughes();
+    // carrier.RoyalDutchShell();
+    // carrier.Nike();
+    // carrier.CorEnergyInfrastructureTrust();
+    // carrier.Fxim();
+    // carrier.Hess();
+  } catch (err) {
+    HelperService.errorHandler(err);
+  }
+} else {
+  throw Error('Please fill sandbox token');
+}
 
 app.get('/', (_, res) => res.send('Hello World!'));
 console.log('Done');
