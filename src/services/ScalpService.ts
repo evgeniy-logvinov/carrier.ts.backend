@@ -14,198 +14,244 @@
  * limitations under the License.
  */
 
-import { MarketInstrument, OrderResponse, PlacedLimitOrder } from '@tinkoff/invest-openapi-js-sdk';
-import HelperService from './HelperService';
-import InvestorService from './InvestorService';
-import OrderService from './OrderService';
-import TinkoffService from './TinkoffService';
+import { MarketInstrument, OrderResponse, PortfolioPosition } from '@tinkoff/invest-openapi-js-sdk';
+import { ApiService } from './ApiService';
+import { FatherService } from './FatherService';
 
 export type BillType = 'investor' | 'traider';
 
-class ScalpService {
-  private marketInstrument: MarketInstrument;
-  private type: BillType;
-  private trend: 'Buy' | 'Sell' = 'Buy';
-  private numberOfTickers: number = 1;
-  private buyTrendStep: number = 4;
-  private buyPrice: number = 0;
-  private sellPrice: number = 4;
-  private sellTrendStep: number = 4;
-  private sellValueGap: number = 7;
-  private buyValueGap: number = 7;
-  private price: number = 0;
-  private timerId: NodeJS.Timeout | undefined = undefined;
+export class ScalpService extends FatherService {
+  marketInstrument: MarketInstrument | null = null;
+  position?: PortfolioPosition | null = null;
+  timerId?: NodeJS.Timeout;
 
-  constructor(marketInstrument: MarketInstrument, numberOfTickers: number, type: BillType = 'investor') {
-    this.marketInstrument = marketInstrument;
-    this.type = type;
-    this.numberOfTickers = numberOfTickers;
-  }
+  start = async (ticker: string) => {
+    this.marketInstrument = await ApiService.getInstance().searchOne({ ticker });
+    const { positions } = await ApiService.getInstance().portfolio();
+    this.position = positions.find(position => position.ticker === ticker);
 
-  startStrategy = async () => {
-    try {
-      const figi: string = this.marketInstrument.figi;
-      const orders = await TinkoffService.getOrdersByFigi(figi);
-      this.logs('orders', orders);
-      if (orders.length > 1)
-        throw new Error('More than one order. Please check whats goin on');
+    this.debug(this.marketInstrument?.name);
+    this.debug(this.position?.expectedYield?.value);
+    this.debug(this.position?.expectedYield?.currency);
+    this.debug(this.position?.averagePositionPrice?.value);
+    this.debug(this.position?.averagePositionPrice?.currency);
 
-      const orderbook = await TinkoffService.getOrderbook(this.marketInstrument.figi, 1);
-
-      if (!orders.length) {
-        const portfolio = await TinkoffService.getTickerPortfolio(figi);
-        this.logs('portfolio', portfolio);
-        this.logs('portfolio', portfolio?.averagePositionPrice, portfolio?.averagePositionPriceNoNkd);
-
-        if (portfolio && portfolio.balance > this.numberOfTickers) {
-          throw Error(`Some problems with balance. Number of Instruments more than expected currentBalance: ${portfolio.balance} numberOfTickers ${this.numberOfTickers}`);
-        } else if (!portfolio || portfolio.balance < this.numberOfTickers) {
-          this.trend = 'Buy';
-          if (orderbook.bids[0])
-            await this.buy(orderbook.bids[0]);
-        } else {
-          this.logs('averagePositionPrice', portfolio?.averagePositionPrice?.value, this.buyPrice);
-          if (!this.buyPrice)
-            this.buyPrice = portfolio?.averagePositionPrice?.value || 0;
-
-          const orderbook = await TinkoffService.getOrderbook(this.marketInstrument.figi, 1);
-          this.logs('orderbook', orderbook);
-          this.trend = 'Sell';
-          if (orderbook.asks[0])
-            await this.sell(orderbook.asks[0]);
-
-        }
-      } else {
-        const currentOrder = orders[0];
-        this.logs(currentOrder);
-        if (currentOrder.operation === 'Buy') {
-          if (currentOrder.price > orderbook.bids[0].price) {
-            await OrderService.cancelOrder(currentOrder.orderId);
-            this.logs(`Order canceled: O: ${currentOrder.operation} Price from order ${currentOrder.price} Orderbook: ${orderbook.bids[0].price}`);
-          } else {
-            this.logs('Waiting when order will be approved');
-          }
-        } else {
-          if (currentOrder.price < orderbook.asks[0].price) {
-            await OrderService.cancelOrder(currentOrder.orderId);
-            this.logs(`Order canceled: O: ${currentOrder.operation} Price from order ${currentOrder.price} Orderbook: ${orderbook.asks[0].price}`);
-          } else {
-            this.logs('Waiting when order will be approved');
-          }
-        }
-      }
-    } catch (err) {
-      HelperService.errorHandler(err);
-    } finally {
-      this.timerId = setTimeout(this.startStrategy, 2000);
-    }
-  };
-
-  start = async () => {
-    this.logs(`Start`);
     this.timerId = setTimeout(this.startStrategy, 2000);
   }
 
+  startStrategy = () => {
+    this.debug('strategy start');
+    this.wall();
+  }
+
+  wall = async () => {
+    if (this.marketInstrument) {
+      const orderbook = await ApiService.getInstance().orderbookGet({figi: this.marketInstrument.figi, depth: 10});
+      this.debug('wall', orderbook.asks);
+      this.debug('wall', orderbook.bids);
+      const maxAsk = this.getMaxQuantity(orderbook.asks);
+      this.debug('max ask', [maxAsk.price, maxAsk.quantity]);
+      const maxBid = this.getMaxQuantity(orderbook.bids);
+      this.debug('max bid', [maxBid.price, maxBid.quantity]);
+    }
+  }
+
+  getMaxQuantity(elements: OrderResponse[]): OrderResponse {
+    return elements.reduce((prev, current) => (prev.quantity > current.quantity) ? prev : current);
+  }
+
   finish = () => {
-    this.logs(`Finish`);
     if (this.timerId)
       clearTimeout(this.timerId);
   }
 
-  getSellGap(): number {
-    return +((this.getMinPriceIncrement() * this.sellValueGap).toFixed(2));
+  getName(): string {
+    return this.marketInstrument?.name || '';
   }
 
-  getBuyGap(): number {
-    return +((this.getMinPriceIncrement() * this.buyValueGap).toFixed(2));
-  }
+  // private marketInstrument: MarketInstrument;
+  // private type: BillType;
+  // private trend: 'Buy' | 'Sell' = 'Buy';
+  // private numberOfTickers: number = 1;
+  // private buyTrendStep: number = 4;
+  // private buyPrice: number = 0;
+  // private sellPrice: number = 4;
+  // private sellTrendStep: number = 4;
+  // private sellValueGap: number = 7;
+  // private buyValueGap: number = 7;
+  // private price: number = 0;
+  // private timerId: NodeJS.Timeout | undefined = undefined;
 
-  getPrice = (price: number): number => {
-    return +(price - this.getMinPriceIncrement()).toFixed(2);
-  }
+  // constructor(marketInstrument: MarketInstrument, numberOfTickers: number, type: BillType = 'investor') {
+  //   this.marketInstrument = marketInstrument;
+  //   this.type = type;
+  //   this.numberOfTickers = numberOfTickers;
+  // }
 
-  buy = async ({price}: OrderResponse): Promise<void> => {
-    this.logs('buy start');
-    this.logs(this.price, price, this.price > price);
+  // startStrategy = async () => {
+  //   try {
+  //     const figi: string = this.marketInstrument.figi;
+  //     const orders = await TinkoffService.getOrdersByFigi(figi);
+  //     this.logs('orders', orders);
+  //     if (orders.length > 1)
+  //       throw new Error('More than one order. Please check whats goin on');
 
-    if (!this.price || this.price > price) {
-      this.price = price;
+  //     const orderbook = await TinkoffService.getOrderbook(this.marketInstrument.figi, 1);
 
-      return;
-    }
+  //     if (!orders.length) {
+  //       const portfolio = await TinkoffService.getTickerPortfolio(figi);
+  //       this.logs('portfolio', portfolio);
+  //       this.logs('portfolio', portfolio?.averagePositionPrice, portfolio?.averagePositionPriceNoNkd);
 
-    if (this.price + this.buyTrendStep * this.getMinPriceIncrement() < price) {
-      this.logs('price', price);
-      this.buyPrice = +(price + this.getBuyGap()).toFixed(2);
-      this.price = 0;
-      await this.buyOrder(this.buyPrice);
-    }
-  }
+  //       if (portfolio && portfolio.balance > this.numberOfTickers) {
+  //         throw Error(`Some problems with balance. Number of Instruments more than expected currentBalance: ${portfolio.balance} numberOfTickers ${this.numberOfTickers}`);
+  //       } else if (!portfolio || portfolio.balance < this.numberOfTickers) {
+  //         this.trend = 'Buy';
+  //         if (orderbook.bids[0])
+  //           await this.buy(orderbook.bids[0]);
+  //       } else {
+  //         this.logs('averagePositionPrice', portfolio?.averagePositionPrice?.value, this.buyPrice);
+  //         if (!this.buyPrice)
+  //           this.buyPrice = portfolio?.averagePositionPrice?.value || 0;
 
-  buyOrder = async (price: number) => {
-    this.logs('buyPrice', price);
-    const placedLimitOrder: PlacedLimitOrder | undefined = await OrderService.createLimitOrder('Buy', this.marketInstrument, this.numberOfTickers, price);
+  //         const orderbook = await TinkoffService.getOrderbook(this.marketInstrument.figi, 1);
+  //         this.logs('orderbook', orderbook);
+  //         this.trend = 'Sell';
+  //         if (orderbook.asks[0])
+  //           await this.sell(orderbook.asks[0]);
 
-    if (!placedLimitOrder)
-      throw Error('Order not created');
+  //       }
+  //     } else {
+  //       const currentOrder = orders[0];
+  //       this.logs(currentOrder);
+  //       if (currentOrder.operation === 'Buy') {
+  //         if (currentOrder.price > orderbook.bids[0].price) {
+  //           await OrderService.cancelOrder(currentOrder.orderId);
+  //           this.logs(`Order canceled: O: ${currentOrder.operation} Price from order ${currentOrder.price} Orderbook: ${orderbook.bids[0].price}`);
+  //         } else {
+  //           this.logs('Waiting when order will be approved');
+  //         }
+  //       } else {
+  //         if (currentOrder.price < orderbook.asks[0].price) {
+  //           await OrderService.cancelOrder(currentOrder.orderId);
+  //           this.logs(`Order canceled: O: ${currentOrder.operation} Price from order ${currentOrder.price} Orderbook: ${orderbook.asks[0].price}`);
+  //         } else {
+  //           this.logs('Waiting when order will be approved');
+  //         }
+  //       }
+  //     }
+  //   } catch (err) {
+  //     HelperService.errorHandler(err);
+  //   } finally {
+  //     this.timerId = setTimeout(this.startStrategy, 2000);
+  //   }
+  // };
 
-    this.logs(`Ticket created order P: ${price} ID: ${placedLimitOrder.orderId} Fee: ${placedLimitOrder.commission}`);
-  }
+  // start = async () => {
+  //   this.logs(`Start`);
+  //   this.timerId = setTimeout(this.startStrategy, 2000);
+  // }
 
-  sell = async ({price}: OrderResponse) => {
-    this.logs('sell start');
+  // finish = () => {
+  //   this.logs(`Finish`);
+  //   if (this.timerId)
+  //     clearTimeout(this.timerId);
+  // }
 
-    const currentSellPrice = price - this.getSellGap();
+  // getSellGap(): number {
+  //   return +((this.getMinPriceIncrement() * this.sellValueGap).toFixed(2));
+  // }
 
-    const buyPrice = this.buyPrice;
-    const buyComission = this.type === 'investor' ? InvestorService.getInvestorComission(buyPrice) : InvestorService.getTraderComission(buyPrice);
-    const sellComission = this.type === 'investor' ? InvestorService.getInvestorComission(currentSellPrice) : InvestorService.getTraderComission(currentSellPrice);
+  // getBuyGap(): number {
+  //   return +((this.getMinPriceIncrement() * this.buyValueGap).toFixed(2));
+  // }
 
-    this.logs(this.price, currentSellPrice, this.price > currentSellPrice);
+  // getPrice = (price: number): number => {
+  //   return +(price - this.getMinPriceIncrement()).toFixed(2);
+  // }
 
-    const sellSumm = +((+currentSellPrice - +sellComission).toFixed(2));
-    const buySumm = +((+buyPrice + +buyComission).toFixed(2));
+  // buy = async ({price}: OrderResponse): Promise<void> => {
+  //   this.logs('buy start');
+  //   this.logs(this.price, price, this.price > price);
 
-    const tax = InvestorService.getTax(currentSellPrice, sellComission, buyPrice, buyComission);
+  //   if (!this.price || this.price > price) {
+  //     this.price = price;
 
-    this.logs(`sellSumm: ${sellSumm} | buySumm: ${buySumm} | tax: ${tax}`);
-    const canSell = sellSumm > (buySumm + tax);
+  //     return;
+  //   }
 
-    if (!canSell) {
-      this.logs(`Not usefull order. Expected more: ${buySumm + tax}`);
+  //   if (this.price + this.buyTrendStep * this.getMinPriceIncrement() < price) {
+  //     this.logs('price', price);
+  //     this.buyPrice = +(price + this.getBuyGap()).toFixed(2);
+  //     this.price = 0;
+  //     await this.buyOrder(this.buyPrice);
+  //   }
+  // }
 
-      return;
-    }
+  // buyOrder = async (price: number) => {
+  //   this.logs('buyPrice', price);
+  //   const placedLimitOrder: PlacedLimitOrder | undefined = await OrderService.createLimitOrder('Buy', this.marketInstrument, this.numberOfTickers, price);
 
-    if (!this.price || this.price < currentSellPrice) {
-      this.price = currentSellPrice;
+  //   if (!placedLimitOrder)
+  //     throw Error('Order not created');
 
-      return;
-    }
+  //   this.logs(`Ticket created order P: ${price} ID: ${placedLimitOrder.orderId} Fee: ${placedLimitOrder.commission}`);
+  // }
 
-    if (this.price - this.sellTrendStep * this.getMinPriceIncrement() > currentSellPrice) {
-      this.logs(currentSellPrice);
-      this.sellPrice = currentSellPrice;
-      this.price = 0;
-      await this.sellOrder(this.sellPrice);
-    }
-  }
+  // sell = async ({price}: OrderResponse) => {
+  //   this.logs('sell start');
 
-  sellOrder = async (price: number) => {
-    this.logs('sellPrice', price);
-    const placedLimitOrder: PlacedLimitOrder | undefined = await OrderService.createLimitOrder('Sell', this.marketInstrument, this.numberOfTickers, price);
+  //   const currentSellPrice = price - this.getSellGap();
 
-    if (!placedLimitOrder)
-      throw Error('Order not created');
+  //   const buyPrice = this.buyPrice;
+  //   const buyComission = this.type === 'investor' ? InvestorService.getInvestorComission(buyPrice) : InvestorService.getTraderComission(buyPrice);
+  //   const sellComission = this.type === 'investor' ? InvestorService.getInvestorComission(currentSellPrice) : InvestorService.getTraderComission(currentSellPrice);
 
-    this.logs(`Ticket created order P: ${price} ID: ${placedLimitOrder.orderId} Fee: ${placedLimitOrder.commission}`);
-  }
+  //   this.logs(this.price, currentSellPrice, this.price > currentSellPrice);
 
-  getMinPriceIncrement = () => {
-    return this.marketInstrument && this.marketInstrument.minPriceIncrement || 0;
-  }
+  //   const sellSumm = +((+currentSellPrice - +sellComission).toFixed(2));
+  //   const buySumm = +((+buyPrice + +buyComission).toFixed(2));
 
-  logs = (...args: any[]) => console.log(this.marketInstrument.ticker + '    '.slice(0, 4 - this.marketInstrument.ticker.length), ' | ', this.type, ' | ', this.trend, ' | ', ...args);
+  //   const tax = InvestorService.getTax(currentSellPrice, sellComission, buyPrice, buyComission);
+
+  //   this.logs(`sellSumm: ${sellSumm} | buySumm: ${buySumm} | tax: ${tax}`);
+  //   const canSell = sellSumm > (buySumm + tax);
+
+  //   if (!canSell) {
+  //     this.logs(`Not usefull order. Expected more: ${buySumm + tax}`);
+
+  //     return;
+  //   }
+
+  //   if (!this.price || this.price < currentSellPrice) {
+  //     this.price = currentSellPrice;
+
+  //     return;
+  //   }
+
+  //   if (this.price - this.sellTrendStep * this.getMinPriceIncrement() > currentSellPrice) {
+  //     this.logs(currentSellPrice);
+  //     this.sellPrice = currentSellPrice;
+  //     this.price = 0;
+  //     await this.sellOrder(this.sellPrice);
+  //   }
+  // }
+
+  // sellOrder = async (price: number) => {
+  //   this.logs('sellPrice', price);
+  //   const placedLimitOrder: PlacedLimitOrder | undefined = await OrderService.createLimitOrder('Sell', this.marketInstrument, this.numberOfTickers, price);
+
+  //   if (!placedLimitOrder)
+  //     throw Error('Order not created');
+
+  //   this.logs(`Ticket created order P: ${price} ID: ${placedLimitOrder.orderId} Fee: ${placedLimitOrder.commission}`);
+  // }
+
+  // getMinPriceIncrement = () => {
+  //   return this.marketInstrument && this.marketInstrument.minPriceIncrement || 0;
+  // }
+
+  // logs = (...args: any[]) => console.log(this.marketInstrument.ticker + '    '.slice(0, 4 - this.marketInstrument.ticker.length), ' | ', this.type, ' | ', this.trend, ' | ', ...args);
 }
 
-export default ScalpService;
+// export default ScalpService;

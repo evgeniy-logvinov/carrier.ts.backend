@@ -13,24 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Telegraf } from 'telegraf';
+// declare module '*';
 
-class TelegramBotService {
-  private static bot: Telegraf | null = null;
+// interface WinstonSentryConfig {
+//   config: {
+//     dsn: string,
+//   },
+//   level: string,
+// }
 
-  static getInstance(): Telegraf {
-    const token = process.env.BOT_TOKEN || '';
-    if (!this.bot)
-      this.bot = new Telegraf(token);
+// declare class WinstonSentry {
+//   constructor(config: WinstonSentryConfig)
+// }
 
-    return this.bot;
-  }
-
-  static sendMessage(message: string) {
-    // const channelName: string = process.env.CHANNEL_NAME || '';
-    // TelegramBotService.getInstance().telegram.sendMessage(channelName, message);
-  }
-}
-
-export default TelegramBotService;
-
+declare module 'winston-sentry';
+// declare module 'winston-sentry' {
+//     export = WinstonSentry;
+// }

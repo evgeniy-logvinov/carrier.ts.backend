@@ -13,24 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Telegraf } from 'telegraf';
 
-class TelegramBotService {
-  private static bot: Telegraf | null = null;
+import { logger } from '../logger/logger';
 
-  static getInstance(): Telegraf {
-    const token = process.env.BOT_TOKEN || '';
-    if (!this.bot)
-      this.bot = new Telegraf(token);
-
-    return this.bot;
+export class FatherService {
+  getName(): string {
+    return '-';
   }
 
-  static sendMessage(message: string) {
-    // const channelName: string = process.env.CHANNEL_NAME || '';
-    // TelegramBotService.getInstance().telegram.sendMessage(channelName, message);
+  debug(message: string | number = '', data: Array<any> = [], ...args: any[]): void {
+    logger.debug(message.toString(), {name: this.getName(), data});
   }
 }
-
-export default TelegramBotService;
-

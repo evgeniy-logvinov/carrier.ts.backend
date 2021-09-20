@@ -9,3 +9,4 @@ Node js tinkoff bot
   TOKEN=""
   BOT_TOKEN=""
   CHANNEL_NAME="@channel_name"
+  SENTRY_URL=""

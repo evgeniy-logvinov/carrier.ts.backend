@@ -23,6 +23,20 @@ const secretToken = process.env.TOKEN; // токен для боевого api
 // const secretToken = null; // токен для боевого api
 const sandboxToken = process.env.SANDBOX_TOKEN; // токен для сандбокса
 
-export default !!secretToken && secretToken !== 'empty' ? new OpenAPI({ apiURL, secretToken, socketURL }) : new OpenAPI({ apiURL: sandboxApiURL, secretToken: sandboxToken as string, socketURL });
+/**
+ * Api help send requests to Tinkoff api
+ * Singleton
+ */
+export class ApiService {
+  private static api: OpenAPI | null = null;
 
+  static getInstance(): OpenAPI {
+    if (!(secretToken || sandboxToken))
+      throw new Error('Please fill tokens for api');
 
+    if (!this.api)
+      this.api = !!secretToken && secretToken !== 'empty' ? new OpenAPI({ apiURL, secretToken, socketURL }) : new OpenAPI({ apiURL: sandboxApiURL, secretToken: sandboxToken as string, socketURL });
+
+    return this.api;
+  }
+}

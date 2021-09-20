@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import express from 'express';
-import CarrierService from './services/CarrierService';
+import { CarrierService } from './services/CarrierService';
 import HelperService from './services/HelperService';
 import TelegramBotService from './services/TelegramBotService';
 
@@ -22,13 +22,13 @@ const app = express();
 
 console.log('sandboxToken', process.env.SANDBOX_TOKEN);
 console.log('token', process.env.TOKEN);
-if (process.env.SANDBOX_TOKEN || process.env.TOKEN) {
+const startUp = async () => {
   try {
     const carrier = new CarrierService();
-    carrier.fillPortfolio();
-    carrier.getPortfolio();
+    await carrier.fillPortfolio();
+    await carrier.start('AAPL');
     // carrier.Apple();
-    carrier.Baidu();
+    // carrier.Baidu();
     // carrier.EnergyTransfer();
     // carrier.AmericanAirlines();
     // carrier.BakerHughes();
@@ -41,10 +41,10 @@ if (process.env.SANDBOX_TOKEN || process.env.TOKEN) {
   } catch (err) {
     HelperService.errorHandler(err);
   }
-} else {
-  throw Error('Please fill sandbox token');
-}
 
+};
+
+startUp();
 app.get('/', (_, res) => res.send('Hello World!'));
 console.log('Done');
 export default app;
