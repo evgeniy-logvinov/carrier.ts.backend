@@ -24,36 +24,143 @@ export class ScalpService extends FatherService {
   marketInstrument: MarketInstrument | null = null;
   position?: PortfolioPosition | null = null;
   timerId?: NodeJS.Timeout;
-
+  buyValue: number = 0;
+  yield: number = 0;
+  timeout: number = 4000;
+  takeProfit = 10;
+  stopLoss = 3;
+  // Продавать в конце дня
   start = async (ticker: string) => {
-    this.marketInstrument = await ApiService.getInstance().searchOne({ ticker });
-    const { positions } = await ApiService.getInstance().portfolio();
-    this.position = positions.find(position => position.ticker === ticker);
-
-    this.debug(this.marketInstrument?.name);
-    this.debug(this.position?.expectedYield?.value);
-    this.debug(this.position?.expectedYield?.currency);
-    this.debug(this.position?.averagePositionPrice?.value);
-    this.debug(this.position?.averagePositionPrice?.currency);
-
-    this.timerId = setTimeout(this.startStrategy, 2000);
+    try {
+      this.marketInstrument = await ApiService.getInstance().searchOne({ ticker });
+      this.startStrategy();
+    } catch (err) {
+      console.log(err);
+      this.error(err as Error);
+    }
   }
 
-  startStrategy = () => {
-    this.debug('strategy start');
-    this.wall();
+ startStrategy = async () => {
+   try {
+     const { positions } = await ApiService.getInstance().portfolio();
+     this.position = positions.find(position => position.ticker === this.marketInstrument?.ticker);
+     // expected yield -> difference. can be negative
+     // avarage -> how much cost bought ticker(AVARAGE!!!)
+     this.wall();
+     if (this.position)
+       await this.sell();
+     else
+       await this.buy();
+   } catch (err) {
+     console.log(err);
+     this.error(err as Error);
+   } finally {
+     this.timerId = setTimeout(this.startStrategy, 2000);
+   }
+ }
+
+  buy = async () => {
+    this.debug('buy');
   }
+
+  sell = async () => {
+    this.debug('sell');
+    this.buyValue = this.position?.averagePositionPrice?.value || 0;
+    this.yield = this.position?.expectedYield?.value || 0;
+    this.debug('yield', this.yield);
+    if (this.yield > 0)
+      this.debug('Sell');
+    else
+      this.debug('wait');
+  }
+
+  sellStrategy = async () => {
+    this.debug('Sell');
+    if (this.yield > this.takeProfit)
+      this.debug('TaleProfit');
+    else
+      this.debug('wait');
+
+  }
+
+  // В зависимости от плиты смотрим можно или нет покупать или надо продавать.
+  // На покупку по нижней плите на продажу по верхней плите
+
+  // Если есть акции то смотрим на плиту
+
+
+  // startStrategy = async () => {
+  //   this.debug('strategy start');
+  //   // this.wall();
+  //   try {
+  //     await this.chooseStrategy();
+  //   } catch (err) {
+  //     this.error(err as Error);
+  //     throw err;
+  //   } finally {
+  //     this.timerId = setTimeout(this.startStrategy, this.timeout);
+  //   }
+  // }
+
+  // chooseSellStrategy = async () => {
+  //   if (this.yield > 0)
+  //     this.upTrend();
+  //   else
+  //     this.downTrend();
+  // }
+
+  // upTrend = () => {
+  //   this.debug('up');
+  // }
+
+  // downTrend = () => {
+  //   this.debug('down');
+  // }
 
   wall = async () => {
     if (this.marketInstrument) {
-      const orderbook = await ApiService.getInstance().orderbookGet({figi: this.marketInstrument.figi, depth: 10});
-      this.debug('wall', orderbook.asks);
-      this.debug('wall', orderbook.bids);
-      const maxAsk = this.getMaxQuantity(orderbook.asks);
-      this.debug('max ask', [maxAsk.price, maxAsk.quantity]);
-      const maxBid = this.getMaxQuantity(orderbook.bids);
-      this.debug('max bid', [maxBid.price, maxBid.quantity]);
+      // @ts-ignore
+      const orderbook = await ApiService.getInstance().orderbookGet({figi: this.marketInstrument.figi, depth: 20});
+      if (orderbook.asks.length && orderbook.bids.length) {
+        // ask sell
+        // bid buy
+        this.debug('wall asks', orderbook.asks);
+        const maxAsk = this.getMaxQuantity(orderbook.asks);
+        const allAsks = this.getSumm(orderbook.asks);
+        this.debug('max ask', [maxAsk.price, maxAsk.quantity]);
+
+        this.debug('wall bids', orderbook.bids);
+        const maxBid = this.getMaxQuantity(orderbook.bids);
+        const allBids = this.getSumm(orderbook.bids);
+        this.debug('max bid', [maxBid.price, maxBid.quantity]);
+
+        this.debug('allAsks', allAsks);
+        this.debug('allBids', allBids);
+        this.debug('asks-bids', allAsks - allBids);
+        if (allAsks > allBids) {
+          const percentOfDifference = (allAsks - allBids) * 100 / allAsks;
+          this.debug('up', percentOfDifference);
+          this.debug('wall asks', orderbook.asks);
+          if (percentOfDifference > 20)
+            this.warn('big up', percentOfDifference);
+
+        } else if (allAsks > allBids) {
+          const percentOfDifference = (allBids - allAsks) * 100 / allBids;
+          this.debug('down', percentOfDifference);
+          this.debug('wall bids', orderbook.bids);
+
+          if (percentOfDifference > 20)
+            this.warn('big down', percentOfDifference);
+        } else {
+          this.debug('stop');
+        }
+
+      }
     }
+  }
+
+  getSumm(orders: OrderResponse[]) {
+    return orders.map(el => el.quantity).reduce((partial_sum, a) => partial_sum + a, 0);
   }
 
   getMaxQuantity(elements: OrderResponse[]): OrderResponse {

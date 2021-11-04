@@ -26,7 +26,11 @@ const startUp = async () => {
   try {
     const carrier = new CarrierService();
     await carrier.fillPortfolio();
+    await carrier.start('TIPO');
     await carrier.start('AAPL');
+    await carrier.start('BAC');
+    await carrier.start('QC');
+    await carrier.start('RNAZ');
     // carrier.Apple();
     // carrier.Baidu();
     // carrier.EnergyTransfer();

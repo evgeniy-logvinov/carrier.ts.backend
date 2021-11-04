@@ -21,7 +21,19 @@ export class FatherService {
     return '-';
   }
 
-  debug(message: string | number = '', data: Array<any> = [], ...args: any[]): void {
+  info(message: string | number = '', data: Array<any> | string | number = [], ...args: any[]): void {
+    logger.info(message.toString(), {name: this.getName(), data});
+  }
+
+  debug(message: string | number = '', data: Array<any> | string | number = [], ...args: any[]): void {
     logger.debug(message.toString(), {name: this.getName(), data});
+  }
+
+  warn(message: string | number = '', data: Array<any> | string | number = [], ...args: any[]): void {
+    logger.warn(message.toString(), {name: this.getName(), data});
+  }
+
+  error(message: string | number | Error = '', data: Array<any> | string | number = [], ...args: any[]) {
+    logger.error(message.toString(), {name: this.getName(), data});
   }
 }

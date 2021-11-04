@@ -13,143 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// import PortfolioService from './PortfolioService';
-// import ScalpService from './ScalpService';
-// import TinkoffService from './TinkoffService';
-
+import { logger } from '../logger/logger';
 import { ApiService } from './ApiService';
 import { ScalpService } from './ScalpService';
 
 export class CarrierService {
-
-  //  private static bot: Telegraf | null = null;
-
-  //   static getInstance(): Telegraf {
-  //     const token = process.env.BOT_TOKEN || '';
-  //     if (!this.bot)
-  //       this.bot = new Telegraf(token);
-
-  //     return this.bot;
-  //   }
-
-  // static sendMessage(message: string) {
-  //   // const channelName: string = process.env.CHANNEL_NAME || '';
-  //   // TelegramBotService.getInstance().telegram.sendMessage(channelName, message);
-  // }
-
-  // private testEnv = !process.env.TOKEN;
+  private testEnv = !process.env.TOKEN;
 
   public fillPortfolio = async () => {
     const testEnv = !process.env.TOKEN;
-    console.log('testEnv', testEnv);
+    logger.debug('testEnv', {data: [!!testEnv]});
 
     if (testEnv) {
       await ApiService.getInstance().sandboxClear();
       await ApiService.getInstance().setCurrenciesBalance({currency: 'USD', balance: 4000});
+      const res = await ApiService.getInstance().portfolio();
+      logger.debug('portfolio', {data: JSON.parse(JSON.stringify(res.positions))});
     }
-
-    const res = await ApiService.getInstance().portfolio();
-    console.log('portfolio', JSON.parse(JSON.stringify(res.positions)));
-    // expected yield -> increase difference
-    // avarage -> how much cost whne bought ticker(AVARAGE!!!)
   }
 
   public async start(ticker: string) {
     const scalpService = new ScalpService();
     await scalpService.start(ticker);
-    // const marketInstrument = await TinkoffService.getInstrument(ticker);
-    // const scalpService = new ScalpService(marketInstrument, balance, 'traider');
-    // scalpService.start();
   }
-
-  // public getPortfolio = async () => {
-  //   const portfolioService = new PortfolioService();
-  //   await portfolioService.getPortfolio();
-  // }
-
-  // public Apple = async () => {
-  //   const ticker = 'AAPL';
-  //   this.startProcessTinkoffOnly(ticker);
-  // }
-
-  // public Baidu = async () => {
-  //   const ticker = 'BIDU';
-  //   this.startProcessTinkoffOnly(ticker);
-  // }
-
-  // public EnergyTransfer = async () => {
-  //   const ticker = 'ET';
-  //   this.startProcessTinkoffOnly(ticker);
-  // }
-
-  // public AmericanAirlines = async () => {
-  //   const ticker = 'AAL';
-  //   this.startProcessTinkoffOnly(ticker);
-  // }
-
-  // public BakerHughes = async () => {
-  //   const ticker = 'BKR';
-  //   this.startProcessTinkoffOnly(ticker);
-  // }
-
-  // public RoyalDutchShell = async () => {
-  //   const ticker = 'RDS.A';
-  //   this.startProcessTinkoffOnly(ticker, 3);
-  // }
-
-  // public Nike = async () => {
-  //   const ticker = 'NKE';
-  //   this.startProcessTinkoffOnly(ticker, 3);
-  // }
-
-  // public CorEnergyInfrastructureTrust = async () => {
-  //   const ticker = 'CORR';
-  //   this.startProcessTinkoffOnly(ticker, 4);
-  // }
-
-  // public Fxim = async () => {
-  //   const ticker = 'FXIM';
-  //   this.startProcessTinkoffOnly(ticker, 2);
-  // }
-
-  // public Hess = async () => {
-  //   const ticker = 'HES';
-  //   this.startProcessTinkoffOnly(ticker);
-  // }
-
-  // private async startProcessTinkoffOnly(ticker: string, balance: number = 1) {
-  //   // this.startProcessInvestor(ticker);
-  //   // this.startProcessTrader(ticker);
-  //   // this.startProcessTraderCandle(ticker);
-  //   this.startProcessScalpTinkoffOnly(ticker, balance);
-  // }
-
-  // startProcessScalpTinkoffOnly = async (ticker: string, balance: number) => {
-  //   const marketInstrument = await TinkoffService.getInstrument(ticker);
-  //   const scalpService = new ScalpService(marketInstrument, balance, 'traider');
-  //   scalpService.start();
-  // }
-
-  // private async startProcessTraderCandle(ticker: string) {
-  //   // const tinkoff = new TinkoffServiceCandle(ticker, 'traider', 1);
-  //   // await tinkoff.fillInstrument();
-  //   // await tinkoff.fillOngoingSell();
-  //   // await tinkoff.start();
-  // }
-
-  // private startProcessTrader = async (ticker: string) => {
-  //   // const tinkoffService = new TinkoffService(ticker, 'traider');
-  //   // await tinkoffService.fillInstrument();
-  //   // await tinkoffService.fillOngoingSell();
-  //   // await tinkoffService.start();
-  // }
-
-  // private startProcessInvestor = async (ticker: string) => {
-  //   // const tinkoffService = new TinkoffService(ticker);
-  //   // await tinkoffService.fillInstrument();
-  //   // await tinkoffService.fillOngoingSell();
-  //   // await tinkoffService.start();
-  // }
 }
 // 1) Смотрим на текущий курс акции и смотрим куда она меняется.
 // 2.1) Если она идет верх то мы ее покупаем

@@ -18,16 +18,16 @@ import util from 'util';
 // @ts-ignore
 import Sentry from 'winston-sentry';
 import * as Transport from 'winston-transport';
-
+import moment from 'moment';
 const { combine, timestamp, printf } = format;
 
 const winstoneTransports: Transport[] = [];
-winstoneTransports.push(new transports.Console({level: 'silly'}));
+winstoneTransports.push(new transports.Console({level: 'warn'}));
 
 if (!!process.env.SENTRY_URL) {
   winstoneTransports.push(
       new Sentry({
-        level: 'silly',
+        level: 'error',
         dsn: process.env.SENTRY_URL,
         tags: { key: 'value' },
         extra: { key: 'value' },
@@ -46,10 +46,25 @@ if (!!process.env.SENTRY_URL) {
   console.log('Sentry link not introduced');
 }
 
-const myFormat = printf(({timestamp, level, message, name, data}) => {
-  const value = data.length > 0 ? util.inspect(Object.values(data), false, 3, true /* enable colors */) : '';
-  return `${timestamp} [${name}] ${level}: ${message} ${value}`;
+const myFormat = printf(({timestamp, level, message, name, data}): string => {
+  return `${moment(timestamp).format('DD.MM.YYYY HH.mm.ss')} [${name}] ${level}: ${message} ${getValue(data)}`;
 });
+
+const getValue = (data: Array<any> | string | number): string => {
+  if (data instanceof Array) {
+    if (data?.length) {
+      if (data.length === 1)
+        return util.inspect(data[0], false, 3, true /* enable colors */);
+      else
+        return util.inspect(Object.values(data), false, 3, true /* enable colors */);
+
+    } else {
+      return '';
+    }
+  } else {
+    return data.toString();
+  }
+};
 
 export const logger = createLogger({
   format: combine(timestamp(), myFormat),
